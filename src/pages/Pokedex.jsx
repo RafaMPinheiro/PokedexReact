@@ -1,26 +1,81 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-
-import { Grid, Pagination } from '@mui/material';
 import { Container } from '@mui/system';
-
-import Cards from '../Components/Cards';
-import HeaderBar from '../Components/HeaderBar';
+import Filter from '../Components/Filter';
+import maiuscula from '../helpers/Maiscula';
+import TratamentoDasInfo from '../helpers/TratatamentoDasInfo';
 
 export default function Pokedex() {
   const [pokemons, setPokemons] = useState([]);
-  const [PokemonsByPage, setPokemonsByPage] = useState([]);
-  const [page, setPage] = useState(1);
+  const [filtredPokemons, setFiltredPokemons] = useState([]);
 
   const getPokemons = () => {
     var endpoints = [];
-    for (var i = 1; i < 1000; i++) {
+    for (var i = 1; i < 300; i++) {
       endpoints.push(`https://pokeapi.co/api/v2/pokemon/${i}`);
     }
-    axios
-      .all(endpoints.map((endpoint) => axios.get(endpoint)))
-      .then((res) => setPokemons(res));
+    axios.all(endpoints.map((endpoint) => axios.get(endpoint))).then((res) => {
+      var pokemons = TratamentoDasInfo(res);
+      setPokemons(pokemons);
+    });
   };
+
+  useEffect(() => {
+    getPokemons();
+  }, []);
+
+  const searchPokemonsByName = (name) => {
+    if (name == '') {
+      setFiltredPokemons([]);
+      return;
+    } else {
+      name = maiuscula(name);
+      var filtred = [];
+      for (var i in pokemons) {
+        if (pokemons[i].name.includes(name)) {
+          filtred.push(pokemons[i]);
+        }
+      }
+      setFiltredPokemons(filtred);
+    }
+  };
+
+  const searchPokemonsByType = (props) => {
+    var filtred = [];
+    for (var i in pokemons) {
+      var type1 = pokemons[i].types[0].type.name;
+      if (maiuscula(type1) == props) {
+        filtred.push(pokemons[i]);
+      }
+
+      if (pokemons[i].types[1]) {
+        var type2 = pokemons[i].types[1].type.name;
+        if (maiuscula(type2) == props) {
+          filtred.push(pokemons[i]);
+        }
+      }
+    }
+    setFiltredPokemons(filtred);
+    //console.log(filtred);
+  };
+
+  return (
+    <div>
+      <main>
+        <Filter
+          pokemons={pokemons}
+          filtredPokemons={filtredPokemons}
+          searchPokemonsByName={searchPokemonsByName}
+          searchPokemonsByType={searchPokemonsByType}
+        />
+      </main>
+    </div>
+  );
+}
+
+/*
+  const [PokemonsByPage, setPokemonsByPage] = useState([]);
+  const [page, setPage] = useState(1);
 
   const getPokemonsByPage = (page) => {
     var endpoints = [];
@@ -33,40 +88,8 @@ export default function Pokedex() {
       .all(endpoints.map((endpoint) => axios.get(endpoint)))
       .then((res) => setPokemonsByPage(res));
   };
-
-  useEffect(() => {
-    getPokemons();
-    getPokemonsByPage(page);
-  }, []);
-
   const handleChangePage = (event, value) => {
     setPage(value);
     getPokemonsByPage(value);
   };
-
-  return (
-    <div>
-      <header>
-        <HeaderBar />
-      </header>
-      <main>
-        <Container fullwidth="true" sx={{ marginTop: '1em' }}>
-          <Grid
-            container
-            spacing={{ xs: 2, md: 3 }}
-            columns={{ xs: 2, sm: 8, md: 12 }}
-            direction="row"
-            justifyContent="center"
-          >
-            {PokemonsByPage.map((pokemon, id) => (
-              <Grid item xs={2} sm={3} md={3} key={id}>
-                <Cards fullwidth="true" pokemon={pokemon} />
-              </Grid>
-            ))}
-          </Grid>
-          <Pagination count={1000 / 50} onChange={handleChangePage} />
-        </Container>
-      </main>
-    </div>
-  );
-}
+  */
